@@ -19,7 +19,8 @@ namespace eosio { namespace chain {
 
          void init_for_input_trx( uint64_t packed_trx_unprunable_size,
                                   uint64_t packed_trx_prunable_size,
-                                  uint32_t num_signatures);
+                                  uint32_t num_signatures,
+                                  bool skip_recording);
 
          void init_for_deferred_trx( fc::time_point published );
 
@@ -37,12 +38,16 @@ namespace eosio { namespace chain {
          void pause_billing_timer();
          void resume_billing_timer();
 
-         void add_ram_usage( account_name account, int64_t ram_delta );
+         uint32_t update_billed_cpu_time( fc::time_point now );
+
+         std::tuple<int64_t, int64_t, bool, bool> max_bandwidth_billed_accounts_can_pay( bool force_elastic_limits = false )const;
 
       private:
 
          friend struct controller_impl;
          friend class apply_context;
+
+         void add_ram_usage( account_name account, int64_t ram_delta );
 
          void dispatch_action( action_trace& trace, const action& a, account_name receiver, bool context_free = false, uint32_t recurse_depth = 0 );
          inline void dispatch_action( action_trace& trace, const action& a, bool context_free = false ) {
@@ -59,7 +64,7 @@ namespace eosio { namespace chain {
          controller&                   control;
          const signed_transaction&     trx;
          transaction_id_type           id;
-         chainbase::database::session  undo_session;
+         optional<chainbase::database::session>  undo_session;
          transaction_trace_ptr         trace;
          fc::time_point                start;
 
@@ -81,6 +86,7 @@ namespace eosio { namespace chain {
          fc::time_point                deadline = fc::time_point::maximum();
          fc::microseconds              leeway = fc::microseconds(3000);
          int64_t                       billed_cpu_time_us = 0;
+         bool                          explicit_billed_cpu_time = false;
 
       private:
          bool                          is_initialized = false;
@@ -92,6 +98,9 @@ namespace eosio { namespace chain {
          uint64_t                      eager_net_limit = 0;
          uint64_t&                     net_usage; /// reference to trace->net_usage
 
+         bool                          cpu_limit_due_to_greylist = false;
+
+         fc::microseconds              initial_objective_duration_limit;
          fc::microseconds              objective_duration_limit;
          fc::time_point                _deadline = fc::time_point::maximum();
          int64_t                       deadline_exception_code = block_cpu_usage_exceeded::code_value;

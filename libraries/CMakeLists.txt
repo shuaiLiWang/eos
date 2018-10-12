@@ -9,5 +9,8 @@ add_subdirectory( chain )
 add_subdirectory( testing )
 add_subdirectory( abi_generator )
 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/chainbase/include/chainbase DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR})
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/softfloat/source/include DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR}/eosio/softfloat)
+#turn these off for now
+set(BUILD_TESTS OFF CACHE BOOL "Build GTest-based tests")
+set(BUILD_TOOLS OFF CACHE BOOL "Build wabt tools")
+set(RUN_RE2C OFF CACHE BOOL "Run re2c")
+add_subdirectory( wabt )
